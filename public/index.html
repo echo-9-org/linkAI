@@ -39,6 +39,11 @@
             </div>
         </header>
 
+        <!-- NOTIFICATION TOAST -->
+        <div id="toast" class="fixed top-8 right-8 glass px-6 py-4 rounded-2xl border-indigo-500 shadow-2xl transform translate-x-96 transition-all duration-500 z-50">
+            <p id="toastText" class="text-sm font-bold"></p>
+        </div>
+
         <!-- SETTINGS PANEL -->
         <div id="settingsPanel" class="hidden glass p-8 rounded-3xl mb-12 border-indigo-500/50">
             <div class="grid grid-cols-1 md:grid-cols-2 gap-12">
@@ -55,7 +60,8 @@
                             <option value="openai">OpenAI (GPT-4o)</option>
                             <option value="gemini">Google Gemini (1.5 Flash)</option>
                         </select>
-                        <p class="text-[10px] text-zinc-500">Note: Ensure your <strong>GEMINI_API_KEY</strong> is set in the <strong>.env</strong> file to use Google Gemini.</p>
+                        <p class="text-[10px] text-zinc-500 mb-4">Note: After updating <strong>GEMINI_API_KEY</strong> in your <strong>.env</strong>, please restart the service to apply changes.</p>
+                        <div id="settingsSaved" class="hidden text-[10px] text-green-400 font-bold">✓ Selection saved to database.</div>
                     </div>
                 </div>
             </div>
@@ -106,6 +112,15 @@
     </div>
 
     <script>
+        function showToast(message, isError = false) {
+            const toast = document.getElementById('toast');
+            const text = document.getElementById('toastText');
+            text.innerText = message;
+            text.className = isError ? 'text-sm font-bold text-red-400' : 'text-sm font-bold text-green-400';
+            toast.classList.remove('translate-x-96');
+            setTimeout(() => toast.classList.add('translate-x-96'), 3000);
+        }
+
         let currentRules = [];
 
         function toggleSettings() {
@@ -124,11 +139,16 @@
         }
 
         async function updateSetting(key, value) {
-            await fetch('/api/settings', {
+            const res = await fetch('/api/settings', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ key, value })
             });
+            if (res.ok) {
+                const savedMsg = document.getElementById('settingsSaved');
+                savedMsg.classList.remove('hidden');
+                setTimeout(() => savedMsg.classList.add('hidden'), 2000);
+            }
         }
 
         async function fetchRules() {
@@ -152,12 +172,12 @@
         }
 
         async function saveRules() {
-            await fetch('/api/rules', {
+            const res = await fetch('/api/rules', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ rules: currentRules })
             });
-            alert('Priority rules updated!');
+            if (res.ok) showToast('Priority rules saved!');
         }
 
         function toggleCustomInput() {
@@ -209,14 +229,20 @@
 
         async function saveDraft(id, btn) {
             btn.innerText = 'Saving...';
-            await fetch('/api/actions/draft', {
+            const res = await fetch('/api/actions/draft', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ id })
             });
-            btn.innerText = 'Draft Saved';
-            btn.classList.replace('accent-gradient', 'bg-zinc-800');
-            setTimeout(fetchData, 1500);
+            if (res.ok) {
+                btn.innerText = 'Draft Saved';
+                btn.classList.replace('accent-gradient', 'bg-zinc-800');
+                showToast('Draft successfully created in Outlook!');
+                setTimeout(fetchData, 1500);
+            } else {
+                btn.innerText = 'Error';
+                showToast('Failed to save draft. Check logs.', true);
+            }
         }
 
         async function triggerSweep() {
@@ -229,11 +255,19 @@
             
             btn.disabled = true;
             text.innerText = 'AI Analysis...';
-            await fetch('/api/sweep', { 
+            const res = await fetch('/api/sweep', { 
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ sinceDays })
             });
+            
+            if (!res.ok) {
+                const data = await res.json();
+                showToast('Sweep Failed: ' + data.error, true);
+            } else {
+                showToast('Sweep completed successfully!');
+            }
+            
             await fetchData();
             btn.disabled = false;
             text.innerText = 'Run Manual Sweep';

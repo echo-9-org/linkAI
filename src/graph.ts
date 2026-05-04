@@ -1,25 +1,18 @@
 import 'isomorphic-fetch';
 import { Client } from '@microsoft/microsoft-graph-client';
 import { getDb } from './db';
+import { getValidToken } from './auth';
 
+/**
+ * Returns an authenticated Microsoft Graph client.
+ */
 export async function getAuthenticatedClient() {
-    const db = await getDb();
-    const authRecord = await db.get('SELECT * FROM auth_state WHERE id = 1');
-
-    if (!authRecord || !authRecord.access_token) {
-        throw new Error('No authentication token found. Please run authentication flow.');
-    }
-
-    // Check if token is expired
-    if (Date.now() > authRecord.expires_at) {
-        // Implement token refresh logic here
-        throw new Error('Token expired. Refresh mechanism not yet implemented.');
-    }
+    const accessToken = await getValidToken();
 
     return Client.init({
         authProvider: (done) => {
-            done(null, authRecord.access_token);
-        }
+            done(null, accessToken);
+        },
     });
 }
 
