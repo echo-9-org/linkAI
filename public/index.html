@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LinkAI | Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Outfit', sans-serif; background-color: #0a0a0c; color: #e4e4e7; }
+        .glass { background: rgba(255, 255, 255, 0.03); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.1); }
+        .accent-gradient { background: linear-gradient(135deg, #6366f1 0%, #a855f7 100%); }
+    </style>
+</head>
+<body class="p-8">
+    <div class="max-w-6xl mx-auto">
+        <header class="flex justify-between items-center mb-12">
+            <div>
+                <h1 class="text-4xl font-bold tracking-tight text-white mb-2">LinkAI <span class="text-indigo-500">Service</span></h1>
+                <p class="text-zinc-400">Executive Outlook Intelligence & Hygiene</p>
+            </div>
+            <div class="glass px-6 py-3 rounded-2xl flex items-center gap-3">
+                <div class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                <span class="text-sm font-medium">Service Active</span>
+            </div>
+        </header>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
+            <div class="glass p-6 rounded-3xl">
+                <p class="text-zinc-500 text-sm mb-1">Unsubscribes</p>
+                <h3 class="text-3xl font-semibold">24</h3>
+                <p class="text-xs text-zinc-600 mt-2">Past 7 days</p>
+            </div>
+            <div class="glass p-6 rounded-3xl">
+                <p class="text-zinc-500 text-sm mb-1">Demo Slots Booked</p>
+                <h3 class="text-3xl font-semibold">12</h3>
+                <p class="text-xs text-zinc-600 mt-2">Next window: Thursday</p>
+            </div>
+            <div class="glass p-6 rounded-3xl">
+                <p class="text-zinc-500 text-sm mb-1">Drafts Prepared</p>
+                <h3 class="text-3xl font-semibold">8</h3>
+                <p class="text-xs text-zinc-600 mt-2">Awaiting your review</p>
+            </div>
+        </div>
+
+        <section>
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-xl font-semibold">Recent Intelligence Logs</h2>
+                <button class="text-sm text-indigo-400 hover:text-indigo-300">View all</button>
+            </div>
+            <div class="glass rounded-3xl overflow-hidden">
+                <table class="w-full text-left text-sm">
+                    <thead class="bg-white/5 border-b border-white/10">
+                        <tr>
+                            <th class="px-6 py-4 font-semibold">Action</th>
+                            <th class="px-6 py-4 font-semibold">Category</th>
+                            <th class="px-6 py-4 font-semibold">Details</th>
+                            <th class="px-6 py-4 font-semibold">Status</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-white/5">
+                        <tr>
+                            <td class="px-6 py-4">Draft Generated</td>
+                            <td class="px-6 py-4 text-zinc-400">Scheduling</td>
+                            <td class="px-6 py-4 italic text-zinc-500">"Meeting request from Satya Nadella..."</td>
+                            <td class="px-6 py-4"><span class="bg-indigo-500/20 text-indigo-400 px-2 py-1 rounded-full text-xs">Awaiting Review</span></td>
+                        </tr>
+                        <tr>
+                            <td class="px-6 py-4">Auto-Unsubscribe</td>
+                            <td class="px-6 py-4 text-zinc-400">Hygiene</td>
+                            <td class="px-6 py-4 text-zinc-500">newsletter@spam.com</td>
+                            <td class="px-6 py-4"><span class="bg-green-500/20 text-green-400 px-2 py-1 rounded-full text-xs">Completed</span></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    </div>
+</body>
+</html>

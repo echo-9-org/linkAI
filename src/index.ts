@@ -1,4 +1,5 @@
 import express from 'express';
+import path from 'path';
 import dotenv from 'dotenv';
 import { initDb, logAction } from './db';
 
@@ -8,9 +9,10 @@ const app = express();
 const port = process.env.PORT || 3000;
 
 app.use(express.json());
+app.use(express.static(path.join(__dirname, '../public')));
 
 app.get('/', (req, res) => {
-    res.send('LinkAI Backend Service is running.');
+    res.sendFile(path.join(__dirname, '../public/index.html'));
 });
 
 // Placeholder for Graph API Webhook endpoint

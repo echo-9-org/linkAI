@@ -33,7 +33,28 @@ export async function initDb() {
         )
     `);
 
-    console.log('Database initialized.');
+    // Create demo proposals table
+    await db.exec(`
+        CREATE TABLE IF NOT EXISTS demo_proposals (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
+            attendee_email TEXT,
+            proposed_slot DATETIME,
+            status TEXT DEFAULT 'PENDING'
+        )
+    `);
+
+    // Create auth state table (for storing tokens securely)
+    await db.exec(`
+        CREATE TABLE IF NOT EXISTS auth_state (
+            id INTEGER PRIMARY KEY CHECK (id = 1),
+            access_token TEXT,
+            refresh_token TEXT,
+            expires_at INTEGER
+        )
+    `);
+
+    console.log('Database initialized with refined schema.');
 }
 
 export async function logAction(category: string, action: string, details: string, status: string = 'INFO') {
