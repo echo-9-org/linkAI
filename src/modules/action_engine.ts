@@ -16,7 +16,7 @@ async function callLLM(systemPrompt: string, userPrompt: string) {
 
     if (provider === 'gemini') {
         const model = genAI.getGenerativeModel({ 
-            model: "gemini-pro"
+            model: "gemini-2.0-flash"
         });
         const result = await model.generateContent(`${systemPrompt}\n\n${userPrompt}`);
         return result.response.text();
