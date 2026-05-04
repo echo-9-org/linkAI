@@ -118,7 +118,7 @@
             text.innerText = message;
             text.className = isError ? 'text-sm font-bold text-red-400' : 'text-sm font-bold text-green-400';
             toast.classList.remove('translate-x-96');
-            setTimeout(() => toast.classList.add('translate-x-96'), 3000);
+            setTimeout(() => toast.classList.add('translate-x-96'), isError ? 8000 : 3000);
         }
 
         let currentRules = [];

@@ -78,13 +78,21 @@ ${rulesText}
 Return JSON: { "hasAction": boolean, "summary": string, "priority": string, "suggestedResponse": string }`;
 
             const responseText = await callLLM(systemPrompt, `Subject: ${subject}\n\nThread:\n${threadText}`);
-            const analysis = JSON.parse(responseText || '{}');
-
-            if (analysis.hasAction) {
-                await db.run(`
-                    INSERT OR REPLACE INTO action_items (conversation_id, subject, summary, priority, recommended_response)
-                    VALUES (?, ?, ?, ?, ?)
-                `, [convId, subject, analysis.summary, analysis.priority, analysis.suggestedResponse]);
+            
+            // CLEANING LOGIC: Strip markdown code blocks if present
+            const cleanJson = (responseText || '{}').replace(/```json/g, '').replace(/```/g, '').trim();
+            
+            try {
+                const analysis = JSON.parse(cleanJson);
+                if (analysis.hasAction) {
+                    await db.run(`
+                        INSERT OR REPLACE INTO action_items (conversation_id, subject, summary, priority, recommended_response)
+                        VALUES (?, ?, ?, ?, ?)
+                    `, [convId, subject, analysis.summary, analysis.priority, analysis.suggestedResponse]);
+                }
+            } catch (parseError) {
+                console.error('Failed to parse AI response:', cleanJson);
+                await logAction('Intelligence', 'Error', `AI returned invalid data for: ${subject}`, 'ERROR');
             }
         }
 
