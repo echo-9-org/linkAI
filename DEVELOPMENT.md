@@ -27,7 +27,7 @@
 2. Click **New registration**:
    - Name: `LinkAI`
    - Supported account types: **Accounts in this organizational directory only**.
-   - Redirect URI: Web -> `http://localhost:3000/auth/callback` (or your ngrok URL).
+   - Redirect URI: Web -> `http://localhost:3001/auth/callback` (or your ngrok URL).
 3. Under **Certificates & secrets**:
    - Create a new **Client Secret**. Copy the **Value** (not the ID) immediately.
 4. Under **API permissions**:
@@ -37,9 +37,9 @@
 5. Copy the **Application (client) ID** and **Directory (tenant) ID** from the **Overview** tab.
 
 ## Local Development (WSL/Linux)
-The service runs on port `3000` by default. To receive Webhooks from Microsoft Graph locally, you may need a tool like `ngrok` to expose your local port to the internet.
+The service runs on port `3001` by default. To receive Webhooks from Microsoft Graph locally, you may need a tool like `ngrok` to expose your local port to the internet.
 
 ```bash
-ngrok http 3000
+ngrok http 3001
 ```
 Update your `REDIRECT_URI` and Webhook Notification URL with the ngrok address.
