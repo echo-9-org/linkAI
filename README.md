@@ -1,38 +1,38 @@
-# linkAI
+# LinkAI
 
-Welcome to linkAI. This project is currently in its initial setup phase.
+**LinkAI** is an intelligent backend service designed for executive-level Outlook productivity. It automates the "noise" of inbox management while enforcing strict scheduling constraints for product demonstrations.
 
-## Overview
+## Key Features
 
-[Provide a brief description of the project here.]
+### 1. The Demo Gatekeeper
+Enforces high-priority windows for product walkthroughs:
+- **Monday: 14:00 – 16:00 BST**
+- **Thursday: 14:00 – 16:00 BST**
+Automatically drafts meeting proposals for "Demo" intents, checking for calendar conflicts in real-time.
+
+### 2. Human-in-the-Loop Protocol
+- Strictly **zero** automated external correspondence.
+- All AI responses are created as **Drafts** with an `[AI DRAFT]` prefix.
+- Includes context-aware "Next Steps" for executive review.
+
+### 3. Automated Inbox Hygiene
+- Programmatically identifies `List-Unsubscribe` headers.
+- Uses LLM-based "Role-Relevance" filtering to separate low-value marketing from critical business development.
+- Automatically archives unsubscribed noise.
+
+## Technical Architecture
+Built on **Node.js/TypeScript** with **Microsoft Graph API**.
+- **Persistence**: SQLite (Logs & State)
+- **Intelligence**: OpenAI GPT-4o
+- **Real-time**: Graph Webhooks
 
 ## Getting Started
+See [DEVELOPMENT.md](./DEVELOPMENT.md) for setup instructions.
 
-### Prerequisites
-
-- List any dependencies or requirements here.
-
-### Installation
-
-```bash
-# Clone the repository
-git clone https://github.com/yourusername/linkAI.git
-
-# Navigate to the project directory
-cd linkAI
-
-# Install dependencies
-npm install # or equivalent
-```
-
-## Usage
-
-[Explain how to use the project.]
-
-## Contributing
-
-Please read [CONTRIBUTING.md](CONTRIBUTING.md) for details on our code of conduct, and the process for submitting pull requests to us.
+## Documentation
+- [Architecture Details](./docs/architecture.md)
+- [Security Policy](./SECURITY.md)
+- [Roadmap](./TODO.md)
 
 ## License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+MIT License.
