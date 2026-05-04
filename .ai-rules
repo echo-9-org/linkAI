@@ -1,0 +1,17 @@
+# AI Interaction Rules for linkAI
+
+## Project Scope & Boundaries
+- **Strict Isolation**: All AI actions, file creations, and command executions MUST be contained within `/home/jamesmorris/linkAI`.
+- **Reference**: Never search or modify files outside this directory unless explicitly requested by the user for integration purposes.
+- **Context Awareness**: Always prioritize the local project context and existing architectural patterns defined within this folder.
+
+## Technical Standards
+- **Styling**: Use Vanilla CSS for all UI components unless TailwindCSS is specifically requested.
+- **Documentation**: Maintain `README.md`, `TODO.md`, and `CHANGELOG.md` with every major feature update.
+- **Security**: Adhere to the policies in `SECURITY.md`.
+
+## Workflow
+1. Plan changes in an implementation plan artifact.
+2. Review existing code to ensure compatibility.
+3. Execute changes with precise tool calls.
+4. Verify changes with testing or visual inspection.
