@@ -54,7 +54,21 @@ export async function initDb() {
         )
     `);
 
-    console.log('Database initialized with refined schema.');
+    // Create action items table
+    await db.exec(`
+        CREATE TABLE IF NOT EXISTS action_items (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
+            conversation_id TEXT UNIQUE,
+            subject TEXT,
+            summary TEXT,
+            priority TEXT,
+            recommended_response TEXT,
+            status TEXT DEFAULT 'PENDING'
+        )
+    `);
+
+    console.log('Database initialized with Action Items schema.');
 }
 
 export async function logAction(category: string, action: string, details: string, status: string = 'INFO') {

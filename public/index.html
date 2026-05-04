@@ -19,62 +19,182 @@
                 <h1 class="text-4xl font-bold tracking-tight text-white mb-2">LinkAI <span class="text-indigo-500">Service</span></h1>
                 <p class="text-zinc-400">Executive Outlook Intelligence & Hygiene</p>
             </div>
-            <div class="glass px-6 py-3 rounded-2xl flex items-center gap-3">
-                <div class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-                <span class="text-sm font-medium">Service Active</span>
+            <div class="flex gap-4">
+                <div class="glass px-2 py-2 rounded-2xl flex items-center gap-2">
+                    <select id="sweepRange" onchange="toggleCustomInput()" class="bg-transparent text-sm font-medium focus:outline-none px-2 cursor-pointer">
+                        <option value="1" class="bg-zinc-900">Last 24 Hours</option>
+                        <option value="7" class="bg-zinc-900">Last Week</option>
+                        <option value="30" class="bg-zinc-900">Last Month</option>
+                        <option value="custom" class="bg-zinc-900">Custom Months</option>
+                    </select>
+                    <input id="customMonths" type="number" placeholder="Months" class="hidden w-16 bg-white/5 rounded-lg px-2 py-1 text-xs focus:outline-none border border-white/10">
+                </div>
+                <button onclick="triggerSweep()" id="sweepBtn" class="glass px-6 py-3 rounded-2xl flex items-center gap-3 hover:bg-white/5 transition-all">
+                    <span id="sweepIcon" class="w-2 h-2 bg-indigo-500 rounded-full"></span>
+                    <span id="sweepText" class="text-sm font-medium">Run Manual Sweep</span>
+                </button>
             </div>
         </header>
 
         <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
             <div class="glass p-6 rounded-3xl">
                 <p class="text-zinc-500 text-sm mb-1">Unsubscribes</p>
-                <h3 class="text-3xl font-semibold">24</h3>
-                <p class="text-xs text-zinc-600 mt-2">Past 7 days</p>
+                <h3 id="statUnsub" class="text-3xl font-semibold">0</h3>
             </div>
             <div class="glass p-6 rounded-3xl">
-                <p class="text-zinc-500 text-sm mb-1">Demo Slots Booked</p>
-                <h3 class="text-3xl font-semibold">12</h3>
-                <p class="text-xs text-zinc-600 mt-2">Next window: Thursday</p>
+                <p class="text-zinc-500 text-sm mb-1">Demo Slots Found</p>
+                <h3 id="statDemos" class="text-3xl font-semibold">0</h3>
             </div>
-            <div class="glass p-6 rounded-3xl">
-                <p class="text-zinc-500 text-sm mb-1">Drafts Prepared</p>
-                <h3 class="text-3xl font-semibold">8</h3>
-                <p class="text-xs text-zinc-600 mt-2">Awaiting your review</p>
+            <div class="glass p-6 rounded-3xl border-indigo-500/30">
+                <p class="text-zinc-500 text-sm mb-1">Action Items Found</p>
+                <h3 id="statActions" class="text-3xl font-semibold">0</h3>
             </div>
         </div>
 
+        <section class="mb-12">
+            <h2 class="text-xl font-semibold mb-6">Priority Action Items</h2>
+            <div id="actionList" class="grid grid-cols-1 gap-4">
+                <!-- Action items will be injected here -->
+                <div class="glass p-6 rounded-3xl animate-pulse">
+                    <p class="text-zinc-500">Scanning for high-value tasks...</p>
+                </div>
+            </div>
+        </section>
+
         <section>
             <div class="flex justify-between items-center mb-6">
-                <h2 class="text-xl font-semibold">Recent Intelligence Logs</h2>
-                <button class="text-sm text-indigo-400 hover:text-indigo-300">View all</button>
+                <h2 class="text-xl font-semibold">Intelligence Logs</h2>
+                <button onclick="fetchData()" class="text-sm text-indigo-400 hover:text-indigo-300">Refresh</button>
             </div>
             <div class="glass rounded-3xl overflow-hidden">
                 <table class="w-full text-left text-sm">
                     <thead class="bg-white/5 border-b border-white/10">
                         <tr>
                             <th class="px-6 py-4 font-semibold">Action</th>
-                            <th class="px-6 py-4 font-semibold">Category</th>
                             <th class="px-6 py-4 font-semibold">Details</th>
                             <th class="px-6 py-4 font-semibold">Status</th>
                         </tr>
                     </thead>
-                    <tbody class="divide-y divide-white/5">
-                        <tr>
-                            <td class="px-6 py-4">Draft Generated</td>
-                            <td class="px-6 py-4 text-zinc-400">Scheduling</td>
-                            <td class="px-6 py-4 italic text-zinc-500">"Meeting request from Satya Nadella..."</td>
-                            <td class="px-6 py-4"><span class="bg-indigo-500/20 text-indigo-400 px-2 py-1 rounded-full text-xs">Awaiting Review</span></td>
-                        </tr>
-                        <tr>
-                            <td class="px-6 py-4">Auto-Unsubscribe</td>
-                            <td class="px-6 py-4 text-zinc-400">Hygiene</td>
-                            <td class="px-6 py-4 text-zinc-500">newsletter@spam.com</td>
-                            <td class="px-6 py-4"><span class="bg-green-500/20 text-green-400 px-2 py-1 rounded-full text-xs">Completed</span></td>
-                        </tr>
+                    <tbody id="logTable" class="divide-y divide-white/5">
                     </tbody>
                 </table>
             </div>
         </section>
     </div>
+
+    <script>
+        function toggleCustomInput() {
+            const select = document.getElementById('sweepRange');
+            const input = document.getElementById('customMonths');
+            input.style.display = select.value === 'custom' ? 'block' : 'none';
+        }
+
+        async function fetchData() {
+            try {
+                // Fetch Stats
+                const statsRes = await fetch('/api/stats');
+                const stats = await statsRes.json();
+                document.getElementById('statUnsub').innerText = stats.unsubscribes;
+                document.getElementById('statDemos').innerText = stats.demos;
+                document.getElementById('statActions').innerText = stats.drafts; // Using drafted count as proxy for now
+
+                // Fetch Action Items
+                const actionsRes = await fetch('/api/actions');
+                const actions = await actionsRes.json();
+                const actionList = document.getElementById('actionList');
+                if (actions.length === 0) {
+                    actionList.innerHTML = '<div class="glass p-6 rounded-3xl text-zinc-500">No pending action items identified.</div>';
+                } else {
+                    actionList.innerHTML = actions.map(action => `
+                        <div class="glass p-6 rounded-3xl border-l-4 ${action.priority === 'High' ? 'border-red-500' : 'border-indigo-500'}">
+                            <div class="flex justify-between items-start mb-4">
+                                <div>
+                                    <span class="text-xs font-bold uppercase tracking-widest ${action.priority === 'High' ? 'text-red-400' : 'text-indigo-400'}">${action.priority} Priority</span>
+                                    <h4 class="text-lg font-semibold mt-1">${action.subject}</h4>
+                                </div>
+                                <button onclick="saveDraft(${action.id})" class="accent-gradient text-white text-xs px-4 py-2 rounded-xl font-bold hover:opacity-90 transition-all">
+                                    Save Draft to Outlook
+                                </button>
+                            </div>
+                            <p class="text-zinc-400 text-sm mb-4">${action.summary}</p>
+                            <div class="bg-white/5 p-4 rounded-2xl italic text-zinc-500 text-xs">
+                                " ${action.recommended_response} "
+                            </div>
+                        </div>
+                    `).join('');
+                }
+
+                // Fetch Logs
+                const logsRes = await fetch('/api/logs');
+                const logs = await logsRes.json();
+                const table = document.getElementById('logTable');
+                table.innerHTML = logs.map(log => `
+                    <tr>
+                        <td class="px-6 py-4 font-medium">${log.action}</td>
+                        <td class="px-6 py-4 text-zinc-500 truncate max-w-sm">${log.details}</td>
+                        <td class="px-6 py-4">
+                            <span class="px-2 py-1 rounded-full text-xs ${
+                                log.status === 'SUCCESS' ? 'bg-green-500/20 text-green-400' : 
+                                log.status === 'ERROR' ? 'bg-red-500/20 text-red-400' : 'bg-indigo-500/20 text-indigo-400'
+                            }">${log.status}</span>
+                        </td>
+                    </tr>
+                `).join('');
+            } catch (error) {
+                console.error('Failed to fetch data:', error);
+            }
+        }
+
+        async function saveDraft(id) {
+            try {
+                const res = await fetch('/api/actions/draft', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ id })
+                });
+                if (res.ok) {
+                    alert('Draft successfully saved to your Outlook Drafts folder!');
+                    fetchData();
+                }
+            } catch (error) {
+                alert('Failed to save draft.');
+            }
+        }
+
+        async function triggerSweep() {
+            const btn = document.getElementById('sweepBtn');
+            const text = document.getElementById('sweepText');
+            const icon = document.getElementById('sweepIcon');
+            const rangeSelect = document.getElementById('sweepRange');
+            const customInput = document.getElementById('customMonths');
+            
+            let sinceDays = parseInt(rangeSelect.value);
+            if (rangeSelect.value === 'custom') {
+                sinceDays = parseInt(customInput.value || 1) * 30;
+            }
+            
+            btn.disabled = true;
+            text.innerText = 'Analyzing Conversations...';
+            icon.classList.add('animate-ping');
+
+            try {
+                await fetch('/api/sweep', { 
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ sinceDays: sinceDays })
+                });
+                await fetchData();
+            } catch (error) {
+                alert('Analysis failed: ' + error.message);
+            } finally {
+                btn.disabled = false;
+                text.innerText = 'Run Manual Sweep';
+                icon.classList.remove('animate-ping');
+            }
+        }
+
+        fetchData();
+        setInterval(fetchData, 15000);
+    </script>
 </body>
 </html>
