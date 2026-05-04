@@ -60,14 +60,23 @@ export async function initDb() {
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
             conversation_id TEXT UNIQUE,
-            subject TEXT,
-            summary TEXT,
-            priority TEXT,
             score INTEGER,
+            urgency TEXT,
             recommended_response TEXT,
+            suggested_event TEXT,
             status TEXT DEFAULT 'PENDING'
         )
     `);
+
+    // Migration: Add suggested_event column
+    try {
+        await db.run('ALTER TABLE action_items ADD COLUMN suggested_event TEXT');
+    } catch (e) {}
+
+    // Migration: Add urgency column if it doesn't exist
+    try {
+        await db.run('ALTER TABLE action_items ADD COLUMN urgency TEXT DEFAULT "Flexible"');
+    } catch (e) {}
 
     // Migration: Add score column if it doesn't exist
     try {

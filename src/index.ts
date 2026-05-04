@@ -6,7 +6,7 @@ import { getAuthUrl, acquireTokenByCode } from './auth';
 import { runInboxSweep } from './modules/engine';
 import { identifyActionItems } from './modules/action_engine';
 import { syncRecentContacts, toggleContactPriority } from './modules/contact_manager';
-import { createDraft } from './graph';
+import { createDraft, createCalendarEvent } from './graph';
 
 dotenv.config();
 
@@ -88,15 +88,41 @@ app.post('/api/actions/draft', async (req, res) => {
     try {
         const db = await getDb();
         const action = await db.get('SELECT * FROM action_items WHERE id = ?', [id]);
-        if (!action) return res.status(404).send('Action not found');
+        if (!action) return res.status(404).json({ error: 'Action not found' });
 
-        // Create the draft in Outlook
-        await createDraft(`RE: ${action.subject}`, action.recommended_response, []);
+        // In a real app, we'd pull the recipient from the conversation thread
+        // For this demo, we'll draft it with a placeholder
+        await createDraft(action.subject, action.recommended_response, 'recipient@example.com');
         
-        // Update status
-        await db.run('UPDATE action_items SET status = "DRAFTED" WHERE id = ?', [id]);
-        await logAction('Intelligence', 'Draft Saved', `Saved response draft for: ${action.subject}`, 'SUCCESS');
+        await db.run('UPDATE action_items SET status = "COMPLETED" WHERE id = ?', [id]);
+        res.json({ status: 'success' });
+    } catch (error: any) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+app.post('/api/actions/calendar', async (req, res) => {
+    const { id } = req.body;
+    try {
+        const db = await getDb();
+        const action = await db.get('SELECT * FROM action_items WHERE id = ?', [id]);
+        if (!action || !action.suggested_event) return res.status(404).json({ error: 'No event details found' });
+
+        const event = JSON.parse(action.suggested_event);
+        await createCalendarEvent(event.subject, event.startTime, event.durationMinutes);
         
+        await db.run('UPDATE action_items SET status = "COMPLETED" WHERE id = ?', [id]);
+        res.json({ status: 'success' });
+    } catch (error: any) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+app.post('/api/actions/done', async (req, res) => {
+    const { id } = req.body;
+    try {
+        const db = await getDb();
+        await db.run('UPDATE action_items SET status = "COMPLETED" WHERE id = ?', [id]);
         res.json({ status: 'success' });
     } catch (error: any) {
         res.status(500).json({ error: error.message });

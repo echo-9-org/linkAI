@@ -92,12 +92,21 @@ ${rulesText}
    - Medium Priority: Score 40-80
    - Low Priority: Score < 40
 
+4. Urgency Detection:
+   - "Immediate": Explicit deadline for today/tomorrow, or words like "Urgent", "ASAP", "Emergency".
+   - "Soon": Deadline within this week, or phrases like "this week", "next few days".
+   - "Flexible": No clear deadline, FYI style, or "whenever you have time".
+
+5. Calendar Events:
+   - If a meeting is requested or a deadline is clear, suggest an event.
+   - suggestedEvent: { "subject": string, "startTime": "YYYY-MM-DDTHH:MM:SS", "durationMinutes": number }
+
 CRITICAL: 
 1. The suggested response MUST be written BY James Morris TO the other party. 
 2. Do NOT write the response to James Morris. 
 3. Identify the most recent sender and address them appropriately.
 
-Return JSON: { "hasAction": boolean, "summary": string, "priority": "High" | "Medium" | "Low", "score": number, "suggestedResponse": string }`;
+Return JSON: { "hasAction": boolean, "summary": string, "priority": "High" | "Medium" | "Low", "score": number, "urgency": "Immediate" | "Soon" | "Flexible", "suggestedEvent": object | null, "suggestedResponse": string }`;
 
             const responseText = await callLLM(systemPrompt, `Subject: ${subject}\n\nThread:\n${threadText}`);
             const cleanJson = (responseText || '{}').replace(/```json/g, '').replace(/```/g, '').trim();
@@ -106,9 +115,9 @@ Return JSON: { "hasAction": boolean, "summary": string, "priority": "High" | "Me
                 const analysis = JSON.parse(cleanJson);
                 if (analysis.hasAction) {
                     await db.run(`
-                        INSERT OR REPLACE INTO action_items (conversation_id, subject, summary, priority, score, recommended_response)
-                        VALUES (?, ?, ?, ?, ?, ?)
-                    `, [convId, subject, analysis.summary, analysis.priority, analysis.score, analysis.suggestedResponse]);
+                        INSERT OR REPLACE INTO action_items (conversation_id, subject, summary, priority, score, urgency, recommended_response, suggested_event)
+                        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                    `, [convId, subject, analysis.summary, analysis.priority, analysis.score, analysis.urgency, analysis.suggestedResponse, JSON.stringify(analysis.suggestedEvent)]);
                 }
             } catch (parseError) {
                 console.error('Failed to parse AI response:', cleanJson);

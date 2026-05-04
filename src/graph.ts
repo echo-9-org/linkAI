@@ -16,20 +16,52 @@ export async function getAuthenticatedClient() {
     });
 }
 
-export async function createDraft(subject: string, content: string, recipients: string[]) {
+/**
+ * Creates a draft email in Outlook.
+ */
+export async function createDraft(subject: string, body: string, recipientEmail: string) {
     const client = await getAuthenticatedClient();
+
     const draft = {
-        subject,
+        subject: subject,
         body: {
             contentType: 'HTML',
-            content
+            content: body
         },
-        toRecipients: recipients.map(email => ({
-            emailAddress: { address: email }
-        }))
+        toRecipients: [
+            {
+                emailAddress: {
+                    address: recipientEmail
+                }
+            }
+        ]
     };
 
     return client.api('/me/messages').post(draft);
+}
+
+/**
+ * Creates a calendar event in Outlook.
+ */
+export async function createCalendarEvent(subject: string, start: string, durationMinutes: number) {
+    const client = await getAuthenticatedClient();
+    
+    const startTime = new Date(start);
+    const endTime = new Date(startTime.getTime() + durationMinutes * 60000);
+
+    const event = {
+        subject: subject,
+        start: {
+            dateTime: startTime.toISOString(),
+            timeZone: 'UTC'
+        },
+        end: {
+            dateTime: endTime.toISOString(),
+            timeZone: 'UTC'
+        }
+    };
+
+    return client.api('/me/events').post(event);
 }
 
 export async function getCalendarView(start: string, end: string) {

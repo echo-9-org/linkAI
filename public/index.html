@@ -19,7 +19,7 @@
     <div class="max-w-6xl mx-auto">
         <header class="flex justify-between items-center mb-12">
             <div>
-                <h1 class="text-4xl font-bold tracking-tight text-white mb-2">LinkAI <span class="text-indigo-500">Service</span></h1>
+                <h1 class="text-4xl font-bold tracking-tight text-white mb-2 text-indigo-400">LinkAI</h1>
                 <p class="text-zinc-400">Executive Intelligence for <strong>James Morris</strong></p>
             </div>
             <div class="flex gap-4">
@@ -28,14 +28,14 @@
                 </button>
                 <div class="glass px-2 py-2 rounded-2xl flex items-center gap-2">
                     <select id="sweepRange" onchange="toggleCustomInput()" class="bg-transparent text-sm font-medium focus:outline-none px-2 cursor-pointer">
-                        <option value="1" class="bg-zinc-900">Last 24 Hours</option>
-                        <option value="7" class="bg-zinc-900">Last Week</option>
-                        <option value="30" class="bg-zinc-900">Last Month</option>
-                        <option value="custom" class="bg-zinc-900">Custom Months</option>
+                        <option value="1">Last 24 Hours</option>
+                        <option value="7">Last Week</option>
+                        <option value="30">Last Month</option>
+                        <option value="custom">Custom Months</option>
                     </select>
                     <input id="customMonths" type="number" placeholder="Months" class="hidden w-16 bg-white/5 rounded-lg px-2 py-1 text-xs focus:outline-none border border-white/10">
                 </div>
-                <button onclick="triggerSweep()" id="sweepBtn" class="accent-gradient text-white px-6 py-3 rounded-2xl flex items-center gap-3 hover:opacity-90 transition-all">
+                <button onclick="triggerSweep()" id="sweepBtn" class="accent-gradient text-white px-6 py-3 rounded-2xl flex items-center gap-3 hover:opacity-90 transition-all shadow-lg shadow-indigo-500/20">
                     <span id="sweepIcon" class="w-2 h-2 bg-white rounded-full"></span>
                     <span id="sweepText" class="text-sm font-bold">Run Manual Sweep</span>
                 </button>
@@ -91,23 +91,21 @@
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
                     <div class="bg-white/5 p-6 rounded-2xl border border-white/10">
                         <label class="text-[10px] font-bold text-zinc-500 uppercase tracking-widest block mb-2">Active Provider</label>
-                        <select id="llmProvider" onchange="updateSetting('llm_provider', this.value)" class="bg-zinc-900 text-white w-full p-3 rounded-xl border border-white/10 mb-6">
+                        <select id="llmProvider" onchange="updateSetting('llm_provider', this.value)" class="bg-zinc-900 text-white w-full p-3 rounded-xl border border-white/10 mb-6 focus:border-indigo-500 outline-none">
                             <option value="openai">OpenAI (GPT-4o)</option>
                             <option value="gemini">Google Gemini</option>
                         </select>
-                        
-                        <label class="text-[10px] font-bold text-zinc-500 uppercase tracking-widest block mb-2">OpenAI API Key</label>
-                        <input type="password" id="openaiKey" placeholder="sk-..." class="bg-zinc-900 text-white w-full p-3 rounded-xl border border-white/10 mb-4 focus:border-indigo-500 outline-none">
-                        
-                        <label class="text-[10px] font-bold text-zinc-500 uppercase tracking-widest block mb-2">Gemini API Key</label>
-                        <input type="password" id="geminiKey" placeholder="AIza..." class="bg-zinc-900 text-white w-full p-3 rounded-xl border border-white/10 mb-6 focus:border-indigo-500 outline-none">
-                        
+                        <label class="text-[10px] font-bold text-zinc-500 uppercase tracking-widest block mb-2">OpenAI Key</label>
+                        <input type="password" id="openaiKey" class="bg-zinc-900 text-white w-full p-3 rounded-xl border border-white/10 mb-4 focus:border-indigo-500 outline-none">
+                        <label class="text-[10px] font-bold text-zinc-500 uppercase tracking-widest block mb-2">Gemini Key</label>
+                        <input type="password" id="geminiKey" class="bg-zinc-900 text-white w-full p-3 rounded-xl border border-white/10 mb-6 focus:border-indigo-500 outline-none">
                         <button onclick="saveKeys()" class="bg-indigo-600 w-full py-3 rounded-xl text-sm font-bold">Apply Key Changes</button>
                     </div>
                 </div>
             </div>
         </div>
 
+        <!-- STATS -->
         <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
             <div class="glass p-6 rounded-3xl">
                 <p class="text-zinc-500 text-sm mb-1">Unsubscribes</p>
@@ -117,20 +115,28 @@
                 <p class="text-zinc-500 text-sm mb-1">Demo Slots</p>
                 <h3 id="statDemos" class="text-3xl font-semibold text-indigo-400">0</h3>
             </div>
-            <div class="glass p-6 rounded-3xl border border-indigo-500/30">
+            <div class="glass p-6 rounded-3xl border border-indigo-500/30 shadow-[0_0_15px_rgba(99,102,241,0.05)]">
                 <p class="text-zinc-500 text-sm mb-1 text-indigo-400">Priority Actions</p>
                 <h3 id="statActions" class="text-3xl font-semibold text-indigo-400">0</h3>
             </div>
         </div>
 
+        <!-- ACTION QUEUE -->
         <section class="mb-12">
-            <h2 class="text-xl font-semibold mb-6 flex items-center gap-3">
-                <span class="w-2 h-2 bg-indigo-500 rounded-full animate-pulse"></span>
-                Identified Action Items
-            </h2>
-            <div id="actionList" class="grid grid-cols-1 gap-4"></div>
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-xl font-semibold flex items-center gap-3">
+                    <span class="w-2 h-2 bg-indigo-500 rounded-full animate-pulse"></span>
+                    Priority Action Queue
+                </h2>
+                <select id="sortBy" onchange="fetchData()" class="bg-white/5 text-xs font-bold rounded-xl px-4 py-2 border border-white/10 outline-none">
+                    <option value="score">Sort by Score</option>
+                    <option value="urgency">Sort by Urgency</option>
+                </select>
+            </div>
+            <div id="actionList" class="grid grid-cols-1 gap-6"></div>
         </section>
 
+        <!-- LOGS -->
         <section>
             <h2 class="text-xl font-semibold mb-6">Intelligence Activity Logs</h2>
             <div class="glass rounded-3xl overflow-hidden">
@@ -138,9 +144,9 @@
                     <table class="w-full text-left text-sm relative">
                         <thead class="bg-zinc-900 border-b border-white/10 sticky top-0">
                             <tr>
-                                <th class="px-6 py-4 font-semibold">Action</th>
-                                <th class="px-6 py-4 font-semibold">Details</th>
-                                <th class="px-6 py-4 font-semibold text-right">Status</th>
+                                <th class="px-6 py-4 font-semibold text-zinc-500 text-[10px] uppercase">Action</th>
+                                <th class="px-6 py-4 font-semibold text-zinc-500 text-[10px] uppercase">Details</th>
+                                <th class="px-6 py-4 font-semibold text-zinc-500 text-[10px] uppercase text-right">Status</th>
                             </tr>
                         </thead>
                         <tbody id="logTable" class="divide-y divide-white/5"></tbody>
@@ -192,7 +198,7 @@
             const gemini = document.getElementById('geminiKey').value;
             await updateSetting('openai_api_key', openai);
             await updateSetting('gemini_api_key', gemini);
-            showToast('API Keys updated successfully!');
+            showToast('API Keys updated!');
         }
 
         async function updateSetting(key, value) {
@@ -276,22 +282,14 @@
         }
 
         async function toggleVIP(email, isPriority, isDomain) {
-            await fetch('/api/contacts/priority', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email, isPriority, isDomain })
-            });
-            showToast('VIP status updated.');
+            await fetch('/api/contacts/priority', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email, isPriority, isDomain }) });
+            showToast('VIP updated.');
         }
 
         async function toggleDomain(email, isPriority, isDomain) {
             let targetEmail = email;
             if (isDomain && !email.startsWith('@')) targetEmail = '@' + email.split('@')[1];
-            await fetch('/api/contacts/priority', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email: targetEmail, isPriority, isDomain })
-            });
+            await fetch('/api/contacts/priority', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: targetEmail, isPriority, isDomain }) });
             fetchContacts();
         }
 
@@ -303,6 +301,7 @@
 
         async function fetchData() {
             try {
+                const sortBy = document.getElementById('sortBy').value;
                 const statsRes = await fetch('/api/stats');
                 const stats = await statsRes.json();
                 document.getElementById('statUnsub').innerText = stats.unsubscribes;
@@ -310,28 +309,44 @@
                 document.getElementById('statActions').innerText = stats.actions;
 
                 const actionsRes = await fetch('/api/actions');
-                const actions = await actionsRes.json();
+                let actions = await actionsRes.json();
+
+                actions.sort((a, b) => {
+                    const urgencyWeight = { 'Immediate': 3, 'Soon': 2, 'Flexible': 1 };
+                    if (sortBy === 'score') {
+                        if (b.score !== a.score) return (b.score || 0) - (a.score || 0);
+                        return (urgencyWeight[b.urgency] || 0) - (urgencyWeight[a.urgency] || 0);
+                    } else {
+                        if (b.urgency !== a.urgency) return (urgencyWeight[b.urgency] || 0) - (urgencyWeight[a.urgency] || 0);
+                        return (b.score || 0) - (a.score || 0);
+                    }
+                });
+
                 const actionList = document.getElementById('actionList');
-                actionList.innerHTML = actions.length === 0 ? '<div class="glass p-6 rounded-3xl text-zinc-500 text-sm">No actions found.</div>' : actions.map(action => `
-                    <div class="glass p-6 rounded-3xl border-l-4 ${action.priority === 'High' ? 'border-red-500' : 'border-indigo-500'}">
-                        <div class="flex justify-between items-start mb-4">
-                            <div>
-                                <div class="flex items-center gap-2 mb-2">
-                                    <span class="text-[10px] font-bold uppercase tracking-widest ${action.priority === 'High' ? 'text-red-400' : 'text-indigo-400'}">${action.priority} Priority</span>
-                                    ${action.score ? `<span class="text-[10px] text-zinc-600 font-bold">Score: ${action.score}</span>` : ''}
+                actionList.innerHTML = actions.length === 0 ? '<div class="glass p-6 rounded-3xl text-zinc-500 text-sm">No pending actions.</div>' : actions.map(action => {
+                    const hasEvent = action.suggested_event && action.suggested_event !== 'null';
+                    return `
+                        <div class="glass p-6 rounded-3xl border-l-4 ${action.urgency === 'Immediate' ? 'border-red-500 shadow-[0_0_15px_rgba(239,68,68,0.1)]' : 'border-indigo-500'}">
+                            <div class="flex justify-between items-start mb-4">
+                                <div>
+                                    <div class="flex items-center gap-3 mb-2">
+                                        <span class="text-[10px] font-bold uppercase tracking-widest ${action.priority === 'High' ? 'text-red-400' : 'text-indigo-400'}">${action.priority}</span>
+                                        <span class="text-[10px] px-2 py-0.5 rounded bg-white/5 font-bold ${action.urgency === 'Immediate' ? 'text-red-500' : 'text-zinc-500'}">${action.urgency}</span>
+                                        <span class="text-[10px] text-zinc-600 font-bold">Score: ${action.score || '--'}</span>
+                                    </div>
+                                    <h4 class="text-lg font-semibold">${action.subject}</h4>
                                 </div>
-                                <h4 class="text-lg font-semibold">${action.subject}</h4>
+                                <div class="flex gap-2">
+                                    ${hasEvent ? `<button onclick="executeAction(${action.id}, 'calendar', this)" class="bg-indigo-600/20 text-indigo-400 text-[10px] px-4 py-2 rounded-xl font-bold border border-indigo-500/30 hover:bg-indigo-600 hover:text-white transition-all">Schedule</button>` : ''}
+                                    <button onclick="executeAction(${action.id}, 'draft', this)" class="accent-gradient text-white text-[10px] px-4 py-2 rounded-xl font-bold shadow-lg shadow-indigo-500/10">Draft</button>
+                                    <button onclick="executeAction(${action.id}, 'done', this)" class="bg-zinc-800 text-zinc-400 text-[10px] px-4 py-2 rounded-xl font-bold hover:bg-green-500/20 hover:text-green-400 transition-all">Done</button>
+                                </div>
                             </div>
-                            <button onclick="saveDraft(${action.id}, this)" class="accent-gradient text-white text-xs px-4 py-2 rounded-xl font-bold">
-                                Save Draft to Outlook
-                            </button>
+                            <p class="text-zinc-400 text-sm mb-4 leading-relaxed">${action.summary}</p>
+                            <div class="bg-black/20 p-4 rounded-2xl italic text-zinc-500 text-xs border border-white/5">" ${action.recommended_response} "</div>
                         </div>
-                        <p class="text-zinc-400 text-sm mb-4 leading-relaxed">${action.summary}</p>
-                        <div class="bg-black/20 p-4 rounded-2xl italic text-zinc-500 text-xs">
-                            " ${action.recommended_response} "
-                        </div>
-                    </div>
-                `).join('');
+                    `;
+                }).join('');
 
                 const logsRes = await fetch('/api/logs');
                 const logs = await logsRes.json();
@@ -345,41 +360,33 @@
             } catch (error) {}
         }
 
+        async function executeAction(id, type, btn) {
+            const originalText = btn.innerText;
+            btn.innerText = '...';
+            btn.disabled = true;
+            const res = await fetch(`/api/actions/${type}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id }) });
+            if (res.ok) {
+                showToast(`Action executed: ${type}`);
+                fetchData();
+            } else {
+                showToast(`Failed to execute ${type}`, true);
+                btn.innerText = originalText;
+                btn.disabled = false;
+            }
+        }
+
         async function triggerSweep() {
             const btn = document.getElementById('sweepBtn');
             const text = document.getElementById('sweepText');
-            const rangeSelect = document.getElementById('sweepRange');
-            const customInput = document.getElementById('customMonths');
-            let sinceDays = parseInt(rangeSelect.value);
-            if (rangeSelect.value === 'custom') sinceDays = parseInt(customInput.value || 1) * 30;
-            
             btn.disabled = true;
-            text.innerText = 'Analyzing Threads...';
-            const res = await fetch('/api/sweep', { 
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ sinceDays })
-            });
+            text.innerText = 'Prioritizing Threads...';
+            const rangeSelect = document.getElementById('sweepRange');
+            let sinceDays = parseInt(rangeSelect.value) || 1;
+            const res = await fetch('/api/sweep', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ sinceDays }) });
             if (res.ok) showToast('Sweep complete!');
-            else showToast('Sweep failed. Check logs.', true);
             await fetchData();
             btn.disabled = false;
             text.innerText = 'Run Manual Sweep';
-        }
-
-        async function saveDraft(id, btn) {
-            btn.innerText = 'Saving...';
-            const res = await fetch('/api/actions/draft', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ id })
-            });
-            if (res.ok) {
-                btn.innerText = 'Draft Saved';
-                btn.classList.replace('accent-gradient', 'bg-zinc-800');
-                showToast('Draft created!');
-                setTimeout(fetchData, 1500);
-            }
         }
 
         function toggleCustomInput() {
