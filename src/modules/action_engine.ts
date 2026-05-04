@@ -9,27 +9,35 @@ const openai = new OpenAI({
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '');
 
-async function callLLM(systemPrompt: string, userPrompt: string) {
+async function callLLM(systemPrompt: string, userPrompt: string, retries: number = 3) {
     const db = await getDb();
     const setting = await db.get('SELECT value FROM settings WHERE key = "llm_provider"');
     const provider = setting?.value || 'openai';
 
-    if (provider === 'gemini') {
-        const model = genAI.getGenerativeModel({ 
-            model: "gemini-flash-latest"
-        });
-        const result = await model.generateContent(`${systemPrompt}\n\n${userPrompt}`);
-        return result.response.text();
-    } else {
-        const completion = await openai.chat.completions.create({
-            model: "gpt-4o",
-            messages: [
-                { role: "system", content: systemPrompt },
-                { role: "user", content: userPrompt }
-            ],
-            response_format: { type: "json_object" }
-        });
-        return completion.choices[0].message.content;
+    for (let i = 0; i < retries; i++) {
+        try {
+            if (provider === 'gemini') {
+                const model = genAI.getGenerativeModel({ 
+                    model: "gemini-flash-latest"
+                });
+                const result = await model.generateContent(`${systemPrompt}\n\n${userPrompt}`);
+                return result.response.text();
+            } else {
+                const completion = await openai.chat.completions.create({
+                    model: "gpt-4o",
+                    messages: [
+                        { role: "system", content: systemPrompt },
+                        { role: "user", content: userPrompt }
+                    ],
+                    response_format: { type: "json_object" }
+                });
+                return completion.choices[0].message.content;
+            }
+        } catch (error: any) {
+            if (i === retries - 1) throw error;
+            console.log(`LLM call failed (attempt ${i + 1}/${retries}). Retrying in 2s...`);
+            await new Promise(resolve => setTimeout(resolve, 2000));
+        }
     }
 }
 
