@@ -2,6 +2,7 @@ import express from 'express';
 import path from 'path';
 import dotenv from 'dotenv';
 import { initDb, logAction } from './db';
+import { getAuthUrl, acquireTokenByCode } from './auth';
 
 dotenv.config();
 
@@ -13,6 +14,30 @@ app.use(express.static(path.join(__dirname, '../public')));
 
 app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, '../public/index.html'));
+});
+
+// Auth Routes
+app.get('/login', async (req, res) => {
+    try {
+        const url = await getAuthUrl();
+        res.redirect(url);
+    } catch (error) {
+        res.status(500).send('Error generating auth URL');
+    }
+});
+
+app.get('/auth/callback', async (req, res) => {
+    const code = req.query.code as string;
+    if (!code) return res.status(400).send('No code provided');
+
+    try {
+        await acquireTokenByCode(code);
+        res.send('Authentication successful! You can close this window.');
+        logAction('Auth', 'Login', 'User successfully authenticated via OAuth2');
+    } catch (error) {
+        console.error(error);
+        res.status(500).send('Authentication failed');
+    }
 });
 
 // Placeholder for Graph API Webhook endpoint
