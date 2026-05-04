@@ -68,7 +68,36 @@ export async function initDb() {
         )
     `);
 
-    console.log('Database initialized with Action Items schema.');
+    // Create priority rules table
+    await db.exec(`
+        CREATE TABLE IF NOT EXISTS priority_rules (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            rank INTEGER,
+            category TEXT,
+            description TEXT
+        )
+    `);
+
+    // Insert default rules if empty
+    const rules = await db.all('SELECT * FROM priority_rules');
+    if (rules.length === 0) {
+        await db.run('INSERT INTO priority_rules (rank, category, description) VALUES (1, "High", "Direct requests from clients, critical bugs, or immediate meeting requests")');
+        await db.run('INSERT INTO priority_rules (rank, category, description) VALUES (2, "Medium", "Internal updates, non-urgent information requests, or general business dev")');
+        await db.run('INSERT INTO priority_rules (rank, category, description) VALUES (3, "Low", "Newsletters, FYIs, or generic community updates")');
+    }
+
+    // Create app settings table
+    await db.exec(`
+        CREATE TABLE IF NOT EXISTS settings (
+            key TEXT PRIMARY KEY,
+            value TEXT
+        )
+    `);
+
+    // Default provider
+    await db.run('INSERT OR IGNORE INTO settings (key, value) VALUES ("llm_provider", "openai")');
+
+    console.log('Database initialized with Priority Rules and App Settings.');
 }
 
 export async function logAction(category: string, action: string, details: string, status: string = 'INFO') {

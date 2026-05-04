@@ -54,12 +54,12 @@ app.get('/api/stats', async (req, res) => {
     const db = await getDb();
     const unsubscribes = await db.get('SELECT COUNT(*) as count FROM unsubscribes');
     const demos = await db.get('SELECT COUNT(*) as count FROM demo_proposals');
-    const drafts = await db.get('SELECT COUNT(*) as count FROM logs WHERE action = "Proposal"');
+    const actions = await db.get('SELECT COUNT(*) as count FROM action_items WHERE status = "PENDING"');
     
     res.json({
         unsubscribes: unsubscribes?.count || 0,
         demos: demos?.count || 0,
-        drafts: drafts?.count || 0
+        actions: actions?.count || 0
     });
 });
 
@@ -95,6 +95,44 @@ app.post('/api/actions/draft', async (req, res) => {
         await db.run('UPDATE action_items SET status = "DRAFTED" WHERE id = ?', [id]);
         await logAction('Intelligence', 'Draft Saved', `Saved response draft for: ${action.subject}`, 'SUCCESS');
         
+        res.json({ status: 'success' });
+    } catch (error: any) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+app.get('/api/rules', async (req, res) => {
+    const db = await getDb();
+    const rules = await db.all('SELECT * FROM priority_rules ORDER BY rank ASC');
+    res.json(rules);
+});
+
+app.post('/api/rules', async (req, res) => {
+    const { rules } = req.body;
+    try {
+        const db = await getDb();
+        for (const rule of rules) {
+            await db.run('UPDATE priority_rules SET category = ?, description = ?, rank = ? WHERE id = ?', 
+                [rule.category, rule.description, rule.rank, rule.id]);
+        }
+        res.json({ status: 'success' });
+    } catch (error: any) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+app.get('/api/settings', async (req, res) => {
+    const db = await getDb();
+    const settings = await db.all('SELECT * FROM settings');
+    const settingsMap = settings.reduce((acc: any, s: any) => ({ ...acc, [s.key]: s.value }), {});
+    res.json(settingsMap);
+});
+
+app.post('/api/settings', async (req, res) => {
+    const { key, value } = req.body;
+    try {
+        const db = await getDb();
+        await db.run('INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)', [key, value]);
         res.json({ status: 'success' });
     } catch (error: any) {
         res.status(500).json({ error: error.message });
