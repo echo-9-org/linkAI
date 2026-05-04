@@ -10,6 +10,9 @@
         body { font-family: 'Outfit', sans-serif; background-color: #0a0a0c; color: #e4e4e7; }
         .glass { background: rgba(255, 255, 255, 0.03); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.1); }
         .accent-gradient { background: linear-gradient(135deg, #6366f1 0%, #a855f7 100%); }
+        .custom-scroll::-webkit-scrollbar { width: 6px; }
+        .custom-scroll::-webkit-scrollbar-track { background: rgba(255,255,255,0.05); }
+        .custom-scroll::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 10px; }
     </style>
 </head>
 <body class="p-8">
@@ -39,29 +42,67 @@
             </div>
         </header>
 
-        <!-- NOTIFICATION TOAST -->
+        <!-- TOAST -->
         <div id="toast" class="fixed top-8 right-8 glass px-6 py-4 rounded-2xl border-indigo-500 shadow-2xl transform translate-x-96 transition-all duration-500 z-50">
             <p id="toastText" class="text-sm font-bold"></p>
         </div>
 
         <!-- SETTINGS PANEL -->
         <div id="settingsPanel" class="hidden glass p-8 rounded-3xl mb-12 border-indigo-500/50">
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-12">
-                <div>
-                    <h3 class="text-xl font-bold mb-4">Priority Logic</h3>
-                    <div id="rulesList" class="grid grid-cols-1 gap-4 mb-6"></div>
-                    <button onclick="saveRules()" class="bg-indigo-600 px-6 py-2 rounded-xl text-xs font-bold">Save Priority Rules</button>
+            <div class="flex border-b border-white/10 mb-8">
+                <button onclick="switchTab('logic')" id="tab-logic" class="px-6 py-3 text-sm font-bold border-b-2 border-indigo-500">Priority Logic</button>
+                <button onclick="switchTab('contacts')" id="tab-contacts" class="px-6 py-3 text-sm font-bold border-b-2 border-transparent hover:text-indigo-400">VIP Contacts</button>
+                <button onclick="switchTab('ai')" id="tab-ai" class="px-6 py-3 text-sm font-bold border-b-2 border-transparent hover:text-indigo-400">AI Config</button>
+            </div>
+
+            <div id="logicTab" class="tab-content">
+                <div class="flex justify-between items-center mb-6">
+                    <h3 class="text-xl font-bold">Weighted Priority Rules</h3>
+                    <button onclick="addRule()" class="bg-zinc-800 px-4 py-2 rounded-xl text-xs font-bold hover:bg-zinc-700">+ Add Rule</button>
                 </div>
-                <div>
-                    <h3 class="text-xl font-bold mb-4">AI Configuration</h3>
+                <div id="rulesList" class="grid grid-cols-1 gap-4 mb-6"></div>
+                <button onclick="saveRules()" class="bg-indigo-600 px-6 py-2 rounded-xl text-xs font-bold">Save Stack & Order</button>
+            </div>
+
+            <div id="contactsTab" class="tab-content hidden">
+                <div class="flex justify-between items-center mb-6">
+                    <h3 class="text-xl font-bold">VIP Contacts & Domains</h3>
+                    <button onclick="syncContacts()" class="bg-zinc-800 px-4 py-2 rounded-xl text-xs font-bold hover:bg-zinc-700">Sync History</button>
+                </div>
+                <div class="glass rounded-2xl overflow-hidden">
+                    <div class="max-h-96 overflow-y-auto custom-scroll">
+                        <table class="w-full text-left text-xs">
+                            <thead class="bg-zinc-900 sticky top-0">
+                                <tr>
+                                    <th class="px-6 py-3">Contact</th>
+                                    <th class="px-6 py-3">Email</th>
+                                    <th class="px-6 py-3">VIP</th>
+                                    <th class="px-6 py-3">Mode</th>
+                                </tr>
+                            </thead>
+                            <tbody id="contactsList" class="divide-y divide-white/5"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <div id="aiTab" class="tab-content hidden">
+                <h3 class="text-xl font-bold mb-6">Provider Settings</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
                     <div class="bg-white/5 p-6 rounded-2xl border border-white/10">
-                        <label class="text-xs font-bold text-zinc-500 uppercase tracking-widest block mb-2">LLM Provider</label>
-                        <select id="llmProvider" onchange="updateSetting('llm_provider', this.value)" class="bg-zinc-900 text-white w-full p-3 rounded-xl focus:outline-none border border-white/10 mb-4">
+                        <label class="text-[10px] font-bold text-zinc-500 uppercase tracking-widest block mb-2">Active Provider</label>
+                        <select id="llmProvider" onchange="updateSetting('llm_provider', this.value)" class="bg-zinc-900 text-white w-full p-3 rounded-xl border border-white/10 mb-6">
                             <option value="openai">OpenAI (GPT-4o)</option>
-                            <option value="gemini">Google Gemini (1.5 Flash)</option>
+                            <option value="gemini">Google Gemini</option>
                         </select>
-                        <p class="text-[10px] text-zinc-500 mb-4">Note: After updating <strong>GEMINI_API_KEY</strong> in your <strong>.env</strong>, please restart the service to apply changes.</p>
-                        <div id="settingsSaved" class="hidden text-[10px] text-green-400 font-bold">✓ Selection saved to database.</div>
+                        
+                        <label class="text-[10px] font-bold text-zinc-500 uppercase tracking-widest block mb-2">OpenAI API Key</label>
+                        <input type="password" id="openaiKey" placeholder="sk-..." class="bg-zinc-900 text-white w-full p-3 rounded-xl border border-white/10 mb-4 focus:border-indigo-500 outline-none">
+                        
+                        <label class="text-[10px] font-bold text-zinc-500 uppercase tracking-widest block mb-2">Gemini API Key</label>
+                        <input type="password" id="geminiKey" placeholder="AIza..." class="bg-zinc-900 text-white w-full p-3 rounded-xl border border-white/10 mb-6 focus:border-indigo-500 outline-none">
+                        
+                        <button onclick="saveKeys()" class="bg-indigo-600 w-full py-3 rounded-xl text-sm font-bold">Apply Key Changes</button>
                     </div>
                 </div>
             </div>
@@ -76,8 +117,8 @@
                 <p class="text-zinc-500 text-sm mb-1">Demo Slots</p>
                 <h3 id="statDemos" class="text-3xl font-semibold text-indigo-400">0</h3>
             </div>
-            <div class="glass p-6 rounded-3xl">
-                <p class="text-zinc-500 text-sm mb-1">Priority Actions</p>
+            <div class="glass p-6 rounded-3xl border border-indigo-500/30">
+                <p class="text-zinc-500 text-sm mb-1 text-indigo-400">Priority Actions</p>
                 <h3 id="statActions" class="text-3xl font-semibold text-indigo-400">0</h3>
             </div>
         </div>
@@ -87,21 +128,19 @@
                 <span class="w-2 h-2 bg-indigo-500 rounded-full animate-pulse"></span>
                 Identified Action Items
             </h2>
-            <div id="actionList" class="grid grid-cols-1 gap-4">
-                <div class="glass p-6 rounded-3xl text-zinc-500">No pending items.</div>
-            </div>
+            <div id="actionList" class="grid grid-cols-1 gap-4"></div>
         </section>
 
         <section>
             <h2 class="text-xl font-semibold mb-6">Intelligence Activity Logs</h2>
             <div class="glass rounded-3xl overflow-hidden">
-                <div class="max-h-96 overflow-y-auto">
+                <div class="max-h-96 overflow-y-auto custom-scroll">
                     <table class="w-full text-left text-sm relative">
                         <thead class="bg-zinc-900 border-b border-white/10 sticky top-0">
                             <tr>
                                 <th class="px-6 py-4 font-semibold">Action</th>
                                 <th class="px-6 py-4 font-semibold">Details</th>
-                                <th class="px-6 py-4 font-semibold">Status</th>
+                                <th class="px-6 py-4 font-semibold text-right">Status</th>
                             </tr>
                         </thead>
                         <tbody id="logTable" class="divide-y divide-white/5"></tbody>
@@ -112,6 +151,8 @@
     </div>
 
     <script>
+        let currentRules = [];
+
         function showToast(message, isError = false) {
             const toast = document.getElementById('toast');
             const text = document.getElementById('toastText');
@@ -121,49 +162,79 @@
             setTimeout(() => toast.classList.add('translate-x-96'), isError ? 8000 : 3000);
         }
 
-        let currentRules = [];
-
         function toggleSettings() {
             const panel = document.getElementById('settingsPanel');
             panel.classList.toggle('hidden');
             if (!panel.classList.contains('hidden')) {
                 fetchRules();
                 fetchSettings();
+                fetchContacts();
             }
+        }
+
+        function switchTab(tab) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+            document.querySelectorAll('[id^="tab-"]').forEach(el => el.classList.remove('border-indigo-500'));
+            document.getElementById(tab + 'Tab').classList.remove('hidden');
+            document.getElementById('tab-' + tab).classList.add('border-indigo-500');
         }
 
         async function fetchSettings() {
             const res = await fetch('/api/settings');
             const settings = await res.json();
             document.getElementById('llmProvider').value = settings.llm_provider || 'openai';
+            document.getElementById('openaiKey').value = settings.openai_api_key || '';
+            document.getElementById('geminiKey').value = settings.gemini_api_key || '';
+        }
+
+        async function saveKeys() {
+            const openai = document.getElementById('openaiKey').value;
+            const gemini = document.getElementById('geminiKey').value;
+            await updateSetting('openai_api_key', openai);
+            await updateSetting('gemini_api_key', gemini);
+            showToast('API Keys updated successfully!');
         }
 
         async function updateSetting(key, value) {
-            const res = await fetch('/api/settings', {
+            await fetch('/api/settings', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ key, value })
             });
-            if (res.ok) {
-                const savedMsg = document.getElementById('settingsSaved');
-                savedMsg.classList.remove('hidden');
-                setTimeout(() => savedMsg.classList.add('hidden'), 2000);
-            }
         }
 
         async function fetchRules() {
             const res = await fetch('/api/rules');
             currentRules = await res.json();
+            renderRules();
+        }
+
+        function renderRules() {
             const list = document.getElementById('rulesList');
-            list.innerHTML = currentRules.map(rule => `
-                <div class="bg-white/5 p-4 rounded-2xl border border-white/10 flex gap-4 items-center">
-                    <div class="text-zinc-600 font-bold">#${rule.rank}</div>
+            list.innerHTML = currentRules.map((rule, index) => `
+                <div class="bg-white/5 p-4 rounded-2xl border border-white/10 flex gap-4 items-center group">
+                    <div class="flex flex-col gap-1">
+                        <button onclick="moveRule(${index}, -1)" class="text-zinc-600 hover:text-indigo-400 text-xs">▲</button>
+                        <div class="text-zinc-400 font-bold text-center">#${index + 1}</div>
+                        <button onclick="moveRule(${index}, 1)" class="text-zinc-600 hover:text-indigo-400 text-xs">▼</button>
+                    </div>
                     <div class="flex-1">
-                        <input type="text" value="${rule.category}" onchange="updateRule(${rule.id}, 'category', this.value)" class="bg-transparent font-bold text-white mb-1 block focus:outline-none">
+                        <input type="text" value="${rule.category}" onchange="updateRule(${rule.id}, 'category', this.value)" class="bg-transparent font-bold text-white mb-1 block focus:outline-none w-full">
                         <input type="text" value="${rule.description}" onchange="updateRule(${rule.id}, 'description', this.value)" class="bg-transparent text-sm text-zinc-400 block w-full focus:outline-none">
                     </div>
+                    <button onclick="deleteRule(${rule.id})" class="text-zinc-600 hover:text-red-400 opacity-0 group-hover:opacity-100 transition-all">✕</button>
                 </div>
             `).join('');
+        }
+
+        function moveRule(index, direction) {
+            const targetIndex = index + direction;
+            if (targetIndex < 0 || targetIndex >= currentRules.length) return;
+            const temp = currentRules[index];
+            currentRules[index] = currentRules[targetIndex];
+            currentRules[targetIndex] = temp;
+            currentRules.forEach((r, i) => r.rank = i + 1);
+            renderRules();
         }
 
         function updateRule(id, field, value) {
@@ -171,19 +242,63 @@
             if (rule) rule[field] = value;
         }
 
+        async function addRule() {
+            await fetch('/api/rules/add', { method: 'POST' });
+            fetchRules();
+        }
+
+        async function deleteRule(id) {
+            if (!confirm('Delete rule?')) return;
+            await fetch('/api/rules/' + id, { method: 'DELETE' });
+            fetchRules();
+        }
+
         async function saveRules() {
-            const res = await fetch('/api/rules', {
+            await fetch('/api/rules', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ rules: currentRules })
             });
-            if (res.ok) showToast('Priority rules saved!');
+            showToast('Rules saved.');
         }
 
-        function toggleCustomInput() {
-            const select = document.getElementById('sweepRange');
-            const input = document.getElementById('customMonths');
-            input.style.display = select.value === 'custom' ? 'block' : 'none';
+        async function fetchContacts() {
+            const res = await fetch('/api/contacts');
+            const contacts = await res.json();
+            document.getElementById('contactsList').innerHTML = contacts.map(c => `
+                <tr>
+                    <td class="px-6 py-4 font-medium">${c.name || 'Unknown'}</td>
+                    <td class="px-6 py-4 text-zinc-500">${c.email}</td>
+                    <td class="px-6 py-4"><input type="checkbox" ${c.is_priority ? 'checked' : ''} onchange="toggleVIP('${c.email}', this.checked, ${c.is_domain})" class="accent-indigo-500 w-4 h-4"></td>
+                    <td class="px-6 py-4"><button onclick="toggleDomain('${c.email}', ${c.is_priority}, ${!c.is_domain})" class="text-[10px] px-2 py-1 rounded-md border border-white/10 ${c.is_domain ? 'bg-indigo-500/20 text-indigo-400' : 'text-zinc-600'}">${c.is_domain ? 'Domain' : 'Email'}</button></td>
+                </tr>
+            `).join('');
+        }
+
+        async function toggleVIP(email, isPriority, isDomain) {
+            await fetch('/api/contacts/priority', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email, isPriority, isDomain })
+            });
+            showToast('VIP status updated.');
+        }
+
+        async function toggleDomain(email, isPriority, isDomain) {
+            let targetEmail = email;
+            if (isDomain && !email.startsWith('@')) targetEmail = '@' + email.split('@')[1];
+            await fetch('/api/contacts/priority', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email: targetEmail, isPriority, isDomain })
+            });
+            fetchContacts();
+        }
+
+        async function syncContacts() {
+            showToast('Syncing contacts...');
+            await fetch('/api/contacts/sync', { method: 'POST' });
+            fetchContacts();
         }
 
         async function fetchData() {
@@ -201,8 +316,11 @@
                     <div class="glass p-6 rounded-3xl border-l-4 ${action.priority === 'High' ? 'border-red-500' : 'border-indigo-500'}">
                         <div class="flex justify-between items-start mb-4">
                             <div>
-                                <span class="text-[10px] font-bold uppercase tracking-widest ${action.priority === 'High' ? 'text-red-400' : 'text-indigo-400'}">${action.priority} Priority</span>
-                                <h4 class="text-lg font-semibold mt-1">${action.subject}</h4>
+                                <div class="flex items-center gap-2 mb-2">
+                                    <span class="text-[10px] font-bold uppercase tracking-widest ${action.priority === 'High' ? 'text-red-400' : 'text-indigo-400'}">${action.priority} Priority</span>
+                                    ${action.score ? `<span class="text-[10px] text-zinc-600 font-bold">Score: ${action.score}</span>` : ''}
+                                </div>
+                                <h4 class="text-lg font-semibold">${action.subject}</h4>
                             </div>
                             <button onclick="saveDraft(${action.id}, this)" class="accent-gradient text-white text-xs px-4 py-2 rounded-xl font-bold">
                                 Save Draft to Outlook
@@ -219,12 +337,34 @@
                 const logs = await logsRes.json();
                 document.getElementById('logTable').innerHTML = logs.map(log => `
                     <tr>
-                        <td class="px-6 py-4 font-medium">${log.action}</td>
-                        <td class="px-6 py-4 text-zinc-500 truncate max-w-sm">${log.details}</td>
-                        <td class="px-6 py-4"><span class="px-2 py-1 rounded-full text-[10px] ${log.status === 'SUCCESS' ? 'bg-green-500/20 text-green-400' : 'bg-indigo-500/20 text-indigo-400'}">${log.status}</span></td>
+                        <td class="px-6 py-4 font-medium text-zinc-300">${log.action}</td>
+                        <td class="px-6 py-4 text-zinc-500 truncate max-w-md">${log.details}</td>
+                        <td class="px-6 py-4 text-right"><span class="px-3 py-1 rounded-full text-[10px] ${log.status === 'SUCCESS' ? 'bg-green-500/10 text-green-400' : 'bg-indigo-500/10 text-indigo-400'}">${log.status}</span></td>
                     </tr>
                 `).join('');
             } catch (error) {}
+        }
+
+        async function triggerSweep() {
+            const btn = document.getElementById('sweepBtn');
+            const text = document.getElementById('sweepText');
+            const rangeSelect = document.getElementById('sweepRange');
+            const customInput = document.getElementById('customMonths');
+            let sinceDays = parseInt(rangeSelect.value);
+            if (rangeSelect.value === 'custom') sinceDays = parseInt(customInput.value || 1) * 30;
+            
+            btn.disabled = true;
+            text.innerText = 'Analyzing Threads...';
+            const res = await fetch('/api/sweep', { 
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ sinceDays })
+            });
+            if (res.ok) showToast('Sweep complete!');
+            else showToast('Sweep failed. Check logs.', true);
+            await fetchData();
+            btn.disabled = false;
+            text.innerText = 'Run Manual Sweep';
         }
 
         async function saveDraft(id, btn) {
@@ -237,44 +377,19 @@
             if (res.ok) {
                 btn.innerText = 'Draft Saved';
                 btn.classList.replace('accent-gradient', 'bg-zinc-800');
-                showToast('Draft successfully created in Outlook!');
+                showToast('Draft created!');
                 setTimeout(fetchData, 1500);
-            } else {
-                btn.innerText = 'Error';
-                showToast('Failed to save draft. Check logs.', true);
             }
         }
 
-        async function triggerSweep() {
-            const btn = document.getElementById('sweepBtn');
-            const text = document.getElementById('sweepText');
-            const rangeSelect = document.getElementById('sweepRange');
-            const customInput = document.getElementById('customMonths');
-            let sinceDays = parseInt(rangeSelect.value);
-            if (rangeSelect.value === 'custom') sinceDays = parseInt(customInput.value || 1) * 30;
-            
-            btn.disabled = true;
-            text.innerText = 'AI Analysis...';
-            const res = await fetch('/api/sweep', { 
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ sinceDays })
-            });
-            
-            if (!res.ok) {
-                const data = await res.json();
-                showToast('Sweep Failed: ' + data.error, true);
-            } else {
-                showToast('Sweep completed successfully!');
-            }
-            
-            await fetchData();
-            btn.disabled = false;
-            text.innerText = 'Run Manual Sweep';
+        function toggleCustomInput() {
+            const select = document.getElementById('sweepRange');
+            const input = document.getElementById('customMonths');
+            input.style.display = select.value === 'custom' ? 'block' : 'none';
         }
 
         fetchData();
-        setInterval(fetchData, 10000);
+        setInterval(fetchData, 15000);
     </script>
 </body>
 </html>

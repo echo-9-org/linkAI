@@ -5,6 +5,7 @@ import { initDb, logAction, getDb } from './db';
 import { getAuthUrl, acquireTokenByCode } from './auth';
 import { runInboxSweep } from './modules/engine';
 import { identifyActionItems } from './modules/action_engine';
+import { syncRecentContacts, toggleContactPriority } from './modules/contact_manager';
 import { createDraft } from './graph';
 
 dotenv.config();
@@ -71,6 +72,7 @@ app.post('/api/sweep', async (req, res) => {
         await identifyActionItems();
         res.json(result);
     } catch (error: any) {
+        await logAction('System', 'Sweep', `Failed: ${error.message}`, 'ERROR');
         res.status(500).json({ error: error.message });
     }
 });
@@ -111,10 +113,34 @@ app.post('/api/rules', async (req, res) => {
     const { rules } = req.body;
     try {
         const db = await getDb();
+        await db.run('BEGIN TRANSACTION');
         for (const rule of rules) {
             await db.run('UPDATE priority_rules SET category = ?, description = ?, rank = ? WHERE id = ?', 
                 [rule.category, rule.description, rule.rank, rule.id]);
         }
+        await db.run('COMMIT');
+        res.json({ status: 'success' });
+    } catch (error: any) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+app.post('/api/rules/add', async (req, res) => {
+    try {
+        const db = await getDb();
+        const maxRank = await db.get('SELECT MAX(rank) as max FROM priority_rules');
+        const nextRank = (maxRank?.max || 0) + 1;
+        await db.run('INSERT INTO priority_rules (category, description, rank) VALUES ("New Rule", "Describe your priority criteria here", ?)', [nextRank]);
+        res.json({ status: 'success' });
+    } catch (error: any) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+app.delete('/api/rules/:id', async (req, res) => {
+    try {
+        const db = await getDb();
+        await db.run('DELETE FROM priority_rules WHERE id = ?', [req.params.id]);
         res.json({ status: 'success' });
     } catch (error: any) {
         res.status(500).json({ error: error.message });
@@ -139,6 +165,31 @@ app.post('/api/settings', async (req, res) => {
     }
 });
 
+app.get('/api/contacts', async (req, res) => {
+    const db = await getDb();
+    const contacts = await db.all('SELECT * FROM contacts ORDER BY last_seen DESC');
+    res.json(contacts);
+});
+
+app.post('/api/contacts/priority', async (req, res) => {
+    const { email, isPriority, isDomain } = req.body;
+    try {
+        await toggleContactPriority(email, isPriority, isDomain);
+        res.json({ status: 'success' });
+    } catch (error: any) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+app.post('/api/contacts/sync', async (req, res) => {
+    try {
+        const result = await syncRecentContacts(60);
+        res.json(result);
+    } catch (error: any) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
 // Webhook endpoint
 app.post('/webhook', (req, res) => {
     console.log('Received notification from Microsoft Graph');
@@ -150,6 +201,9 @@ app.post('/webhook', (req, res) => {
 
 async function startServer() {
     await initDb();
+    // Daily sync on startup
+    syncRecentContacts(60).catch(console.error);
+    
     app.listen(port, () => {
         console.log(`LinkAI service listening at http://localhost:${port}`);
         logAction('System', 'Startup', `Service started on port ${port}`);

@@ -63,10 +63,18 @@ export async function initDb() {
             subject TEXT,
             summary TEXT,
             priority TEXT,
+            score INTEGER,
             recommended_response TEXT,
             status TEXT DEFAULT 'PENDING'
         )
     `);
+
+    // Migration: Add score column if it doesn't exist
+    try {
+        await db.run('ALTER TABLE action_items ADD COLUMN score INTEGER');
+    } catch (e) {
+        // Column already exists, ignore
+    }
 
     // Create priority rules table
     await db.exec(`
@@ -94,10 +102,23 @@ export async function initDb() {
         )
     `);
 
-    // Default provider
-    await db.run('INSERT OR IGNORE INTO settings (key, value) VALUES ("llm_provider", "openai")');
+    // Create contacts table for priority management
+    await db.exec(`
+        CREATE TABLE IF NOT EXISTS contacts (
+            email TEXT PRIMARY KEY,
+            name TEXT,
+            is_priority INTEGER DEFAULT 0,
+            is_domain INTEGER DEFAULT 0,
+            last_seen DATETIME DEFAULT CURRENT_TIMESTAMP
+        )
+    `);
 
-    console.log('Database initialized with Priority Rules and App Settings.');
+    // Default settings
+    await db.run('INSERT OR IGNORE INTO settings (key, value) VALUES ("llm_provider", "openai")');
+    await db.run('INSERT OR IGNORE INTO settings (key, value) VALUES ("openai_api_key", "")');
+    await db.run('INSERT OR IGNORE INTO settings (key, value) VALUES ("gemini_api_key", "")');
+
+    console.log('Database initialized with Priority Rules, App Settings, and Contacts.');
 }
 
 export async function logAction(category: string, action: string, details: string, status: string = 'INFO') {

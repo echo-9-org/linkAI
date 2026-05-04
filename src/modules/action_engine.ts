@@ -3,26 +3,26 @@ import { getDb, logAction } from '../db';
 import OpenAI from 'openai';
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
-const openai = new OpenAI({
-    apiKey: process.env.OPENAI_API_KEY
-});
-
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '');
-
 async function callLLM(systemPrompt: string, userPrompt: string, retries: number = 3) {
     const db = await getDb();
-    const setting = await db.get('SELECT value FROM settings WHERE key = "llm_provider"');
-    const provider = setting?.value || 'openai';
+    const settings = await db.all('SELECT * FROM settings');
+    const settingsMap = settings.reduce((acc: any, s: any) => ({ ...acc, [s.key]: s.value }), {});
+    
+    const provider = settingsMap.llm_provider || 'openai';
+    const openaiKey = settingsMap.openai_api_key || process.env.OPENAI_API_KEY;
+    const geminiKey = settingsMap.gemini_api_key || process.env.GEMINI_API_KEY;
 
     for (let i = 0; i < retries; i++) {
         try {
             if (provider === 'gemini') {
-                const model = genAI.getGenerativeModel({ 
-                    model: "gemini-flash-latest"
-                });
+                if (!geminiKey) throw new Error('Gemini API Key is missing. Add it in Settings.');
+                const genAI = new GoogleGenerativeAI(geminiKey);
+                const model = genAI.getGenerativeModel({ model: "gemini-flash-latest" });
                 const result = await model.generateContent(`${systemPrompt}\n\n${userPrompt}`);
                 return result.response.text();
             } else {
+                if (!openaiKey) throw new Error('OpenAI API Key is missing. Add it in Settings.');
+                const openai = new OpenAI({ apiKey: openaiKey });
                 const completion = await openai.chat.completions.create({
                     model: "gpt-4o",
                     messages: [
@@ -47,7 +47,7 @@ export async function identifyActionItems() {
         const db = await getDb();
 
         const rules = await db.all('SELECT * FROM priority_rules ORDER BY rank ASC');
-        const rulesText = rules.map(r => `${r.category}: ${r.description}`).join('\n');
+        const rulesText = rules.map(r => `Rule #${r.rank} (${r.category}): ${r.description}`).join('\n');
 
         const messages = await client.api('/me/messages')
             .select('id,subject,from,bodyPreview,conversationId,receivedDateTime')
@@ -61,34 +61,54 @@ export async function identifyActionItems() {
         }
 
         for (const [convId, thread] of Object.entries(conversations)) {
-            const threadText = thread.map(m => `${m.from.emailAddress.name} (${m.receivedDateTime}): ${m.bodyPreview}`).join('\n---\n');
+            const lastMsg = thread[thread.length - 1];
+            if (!lastMsg || !lastMsg.from?.emailAddress?.address) continue;
+
+            const threadText = thread.map(m => `${m.from?.emailAddress?.name || 'Unknown'} (${m.receivedDateTime}): ${m.bodyPreview}`).join('\n---\n');
             const subject = thread[0].subject;
+            const senderEmail = lastMsg.from.emailAddress.address.toLowerCase();
+            const senderDomain = `@${senderEmail.split('@')[1]}`;
+
+            const priorityContact = await db.get(`
+                SELECT * FROM contacts 
+                WHERE (email = ? OR (email = ? AND is_domain = 1)) 
+                AND is_priority = 1
+            `, [senderEmail, senderDomain]);
+
+            const vipTag = priorityContact ? `\n[VIP SENDER: ${priorityContact.name || senderEmail} - ALWAYS START WITH HIGH BASE SCORE]` : '';
 
             const systemPrompt = `You are an elite executive assistant for James Morris. 
 Analyze the email thread and identify if there is a pending action for James Morris. 
+
+PRIORITY FORMULA:
+1. Base Score: If VIP Sender (see tag), start at 70 points. Else, start at 30 points.
+2. Rule Weights: Check the thread against the following ORDERED rules. Rule #1 is the most important.
+${rulesText}
+
+3. Scoring: 
+   - Matching a top-3 rule adds 20-30 points.
+   - Matching a lower rule adds 10 points.
+   - High Priority: Score > 80
+   - Medium Priority: Score 40-80
+   - Low Priority: Score < 40
 
 CRITICAL: 
 1. The suggested response MUST be written BY James Morris TO the other party. 
 2. Do NOT write the response to James Morris. 
 3. Identify the most recent sender and address them appropriately.
 
-Use these priority rules to categorize the task:
-${rulesText}
-
-Return JSON: { "hasAction": boolean, "summary": string, "priority": string, "suggestedResponse": string }`;
+Return JSON: { "hasAction": boolean, "summary": string, "priority": "High" | "Medium" | "Low", "score": number, "suggestedResponse": string }`;
 
             const responseText = await callLLM(systemPrompt, `Subject: ${subject}\n\nThread:\n${threadText}`);
-            
-            // CLEANING LOGIC: Strip markdown code blocks if present
             const cleanJson = (responseText || '{}').replace(/```json/g, '').replace(/```/g, '').trim();
             
             try {
                 const analysis = JSON.parse(cleanJson);
                 if (analysis.hasAction) {
                     await db.run(`
-                        INSERT OR REPLACE INTO action_items (conversation_id, subject, summary, priority, recommended_response)
-                        VALUES (?, ?, ?, ?, ?)
-                    `, [convId, subject, analysis.summary, analysis.priority, analysis.suggestedResponse]);
+                        INSERT OR REPLACE INTO action_items (conversation_id, subject, summary, priority, score, recommended_response)
+                        VALUES (?, ?, ?, ?, ?, ?)
+                    `, [convId, subject, analysis.summary, analysis.priority, analysis.score, analysis.suggestedResponse]);
                 }
             } catch (parseError) {
                 console.error('Failed to parse AI response:', cleanJson);
